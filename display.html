@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DISPLAY</title>
+
+<style>
+body {
+    background: black;
+    color: white;
+    text-align: center;
+    margin-top: 40px;
+    font-family: sans-serif;
+}
+
+/* 番号表示エリア */
+#container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 60px;
+}
+
+/* 各番号 */
+.number-box {
+    font-size: 160px;
+    font-weight: bold;
+    padding: 20px 40px;
+    background: #111;
+    border-radius: 20px;
+    animation: fadeZoom 0.6s ease-out;
+}
+
+/* デジタルサイネージ風アニメ */
+@keyframes fadeZoom {
+    0% { opacity: 0; transform: scale(0.6); }
+    100% { opacity: 1; transform: scale(1); }
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- 音声ONボタン -->
+<button id="soundButton" onclick="enableAudio()"
+style="
+    position:fixed;
+    top:20px;
+    right:20px;
+    font-size:32px;
+    padding:15px 25px;
+    background:#28a745;
+    color:white;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    z-index:9999;
+">
+音声を有効にする
+</button>
+
+<script>
+// ブラウザの自動再生ブロック解除
+function enableAudio() {
+    const dummy = new Audio();
+    dummy.play().catch(()=>{});
+    document.getElementById("soundButton").style.display = "none";
+}
+</script>
+
+<h1 style="font-size:60px;">呼び出し番号</h1>
+
+<div id="container"></div>
+
+<!-- ピンポン音と音声 -->
+<audio id="pinpon" src="sound/Windows20Exclamation.wav"></audio>
+<audio id="voice"></audio>
+
+<script>
+const API_KEY = "K909e8S5e914j89";
+
+let lastList = [];  // 前回の番号リスト
+
+// 番号リストを読み込み
+function update() {
+    fetch("server.php")
+        .then(res => res.text())
+        .then(txt => {
+            let currentList = txt.trim() === "" ? [] : txt.trim().split(",");
+
+            displayNumbers(currentList);
+
+            // 新規追加番号がある → 音声再生
+            if (currentList.length > lastList.length) {
+                let newNumbers = currentList.filter(n => !lastList.includes(n));
+                if (newNumbers.length > 0) {
+                    playSound(newNumbers[0]);
+                }
+            }
+
+            lastList = currentList;
+        });
+}
+
+// 番号表示
+function displayNumbers(list) {
+    const container = document.getElementById("container");
+    container.innerHTML = "";
+
+    list.forEach(num => {
+        let div = document.createElement("div");
+        div.className = "number-box";
+        div.innerText = num;
+        container.appendChild(div);
+    });
+}
+
+// 音声再生（ピンポン → VOICEVOX）
+function playSound(num) {
+    const pin = document.getElementById("pinpon");
+    const voice = document.getElementById("voice");
+
+    pin.play();
+
+    pin.onended = () => {
+
+        // どの声で読むか（kitchen.html で選んだ speaker）
+        fetch("speaker.txt")
+            .then(res => res.text())
+            .then(sp => {
+                let speaker = sp.trim();
+                if (speaker === "") speaker = "0"; // デフォルト: 四国めたん
+
+                let text = `${num}番のかた、準備ができました。`;
+
+                let url =
+                    `https://deprecatedapis.tts.quest/v2/voicevox/audio/?key=${API_KEY}` +
+                    `&speaker=${speaker}&pitch=0&intonationScale=1&speed=1&text=` +
+                    encodeURIComponent(text);
+
+                voice.src = url;
+                voice.play();
+            });
+    };
+}
+
+setInterval(update, 1000);
+update();
+</script>
+
+</body>
+</html>

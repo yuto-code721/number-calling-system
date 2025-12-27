@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>KITCHEN</title>
+
+<style>
+body {
+    font-family: sans-serif;
+    text-align: center;
+    padding-top: 40px;
+}
+input, select, button {
+    font-size: 30px;
+    padding: 10px 20px;
+    margin: 10px;
+}
+</style>
+
+</head>
+<body>
+
+<h1 style="font-size:45px;">キッチン操作画面</h1>
+
+<!-- 声の選択 -->
+<label style="font-size:30px;">声の種類：</label>
+<select id="voiceSelect">
+    <option value="0">ボイス1（四国めたん）</option>
+    <option value="3">ボイス2（ずんだもん）</option>
+</select>
+<br>
+
+<!-- 番号入力 -->
+<label style="font-size:30px;">番号：</label>
+<input type="number" id="num" min="0">
+
+<br><br>
+
+<!-- 呼び出しボタン -->
+<button onclick="callNumber()">呼び出し</button>
+
+<!-- 受取完了 -->
+<button onclick="clearNumber()">受け取り完了</button>
+
+<script>
+
+// 番号呼び出し
+function callNumber() {
+    let num = document.getElementById("num").value;
+    let speaker = document.getElementById("voiceSelect").value;
+
+    if (num === "") {
+        alert("番号を入力してください");
+        return;
+    }
+
+    let form = new FormData();
+    form.append("action", "call");
+    form.append("number", num);
+    form.append("speaker", speaker);
+
+    fetch("server.php", {
+        method: "POST",
+        body: form
+    })
+    .then(res => res.text())
+    .then(t => {
+        console.log("call:", t);
+        alert("呼び出しました");
+    });
+}
+
+// 番号削除（受け取り完了）
+function clearNumber() {
+    let num = document.getElementById("num").value;
+
+    if (num === "") {
+        alert("番号を入力してください");
+        return;
+    }
+
+    let form = new FormData();
+    form.append("action", "clear");
+    form.append("number", num);
+
+    fetch("server.php", {
+        method: "POST",
+        body: form
+    })
+    .then(res => res.text())
+    .then(t => {
+        console.log("clear:", t);
+        alert("削除しました（受け取り完了）");
+    });
+}
+
+</script>
+
+</body>
+</html>
